@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 import sys
 import rospy
-from geometry_msgs.msg import Pose
+import numpy as np
+import tf
+from geometry_msgs.msg import PoseStamped, Twist, Vector3, Pose, Point, Quaternion
+from nav_msgs.msg import Odometry
 
 from constants import TrackerConst
 from robot_kalman_filter import RobotFilter
@@ -10,29 +13,50 @@ from robot_kalman_filter import RobotFilter
 class ROSTracker:
     STATE_PREDICTION_TIME = TrackerConst.STATE_PREDICTION_TIME
 
-    def __init__(self, name, ros_topic):
-        self.ros_topic = ros_topic
+    def __init__(self, name, robot_id):
+        self.robot_id = robot_id
+        self.ros_topic = 'robot_pose_{}'.format(robot_id)
 
         rospy.init_node(name)
         rospy.loginfo('Created ros node {}'.format(name))
-        rospy.loginfo('Subscribed to {}'.format(ros_topic))
+        rospy.loginfo('Subscribed to {}'.format(self.ros_topic))
 
         # init dict to store all publishers
-        self.pub_dict = {}
-        self.robots = [RobotFilter() for _ in range(TrackerConst.MAX_ROBOT_PER_TEAM)]
+        self.publisher = rospy.Publisher('tracked_robot_{}'.format(self.robot_id), Odometry, queue_size=10)
+        self.tracked_robot = RobotFilter()
 
 
     def start(self):
         # attempt to subscribe to given topic
-        rospy.Subscriber(self.ros_topic, Pose, self.callback)
+        rospy.Subscriber(self.ros_topic, PoseStamped, self.callback)
         try:
             rospy.spin()
         except SystemExit:
-            print("Hello")
+            print("Tracker failed. Exiting")
 
 
 
-    def callback(self, pose):
-        rospy.loginfo(pose.position)
+    def callback(self, poseStamped):
+        time = poseStamped.header.stamp
+        pose = poseStamped.pose
+        quaternion = (pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w)
+        euler = tf.transformations.euler_from_quaternion(quaternion)
+        obs_state = np.array([pose.position.x, pose.position.y, euler[2]]) # euler[2] is orientation in radians
 
+        # Update and predict
+        self.tracked_robot.update(obs_state, time) 
+        self.tracked_robot.predict(TrackerConst.STATE_PREDICTION_TIME)
 
+        #rospy.loginfo('dx: %0.3f, dy: %0.3f', self.tracked_robot.velocity[0], self.tracked_robot.velocity[1])
+        odom = Odometry()
+        odom.header.stamp = rospy.Time.now()
+
+        robot_pose = self.tracked_robot.pose
+        robot_velocity = self.tracked_robot.velocity
+
+        quat = tf.transformations.quaternion_from_euler(0, 0, self.tracked_robot.get_orientation)
+
+        odom.pose.pose = Pose(Point(robot_pose[0], robot_pose[1], 0), Quaternion(*quat))
+        odom.twist.twist = Twist(Vector3(robot_velocity[0], robot_velocity[1], 0), Vector3(0, 0, robot_velocity[2]))
+      
+        self.publisher.publish(odom)

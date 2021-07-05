@@ -80,9 +80,10 @@ class RobotFilter(KalmanFilter):
     def update(self, observation, t_capture):
         self.is_active = True
 
-        dt = t_capture - self.last_t_capture
-        if dt < 0:
-            return
+        #dt = t_capture - self.last_t_capture
+        #if dt < 0:
+            #return
+        dt = 0
         self.last_t_capture = t_capture
         self.last_observation = observation
 
