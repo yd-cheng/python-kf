@@ -1,4 +1,4 @@
-import sys
+import sys 
 import rospy 
 import numpy as np 
 import tf
@@ -24,20 +24,33 @@ def initialize():
     rospy.spin()
 
 def callback(odom):
-    #print('x: {}'.format(odom.pose.pose.position.x))
-    #print('y: {}'.format(odom.pose.pose.position.y))
+    x = odom.pose.pose.position.x
+    y = odom.pose.pose.position.y
     dx = odom.twist.twist.linear.x
     dy = odom.twist.twist.linear.y
 
-    if dx < 0:
-        print('dx:{}'.format(odom.twist.twist.linear.x))
-    else:
-        print('dx: {}'.format(odom.twist.twist.linear.x))
+    flag = False
 
-    if dy < 0:
-        print('dy:{}'.format(odom.twist.twist.linear.y))
+    if flag == True:
+        if dx < 0:
+            print('dx:{}'.format(dx))
+        else:
+            print('dx: {}'.format(dx))
+
+        if dy < 0:
+            print('dy:{}'.format(dy))
+        else:
+            print('dy: {}'.format(dy))
     else:
-        print('dy: {}'.format(odom.twist.twist.linear.y))
+        if x < 0:
+            print('x:{}'.format(x))
+        else:
+            print('x: {}'.format(x))
+
+        if y < 0:
+            print('y:{}'.format(y))
+        else:
+            print('y: {}'.format(y))
 
 
 if __name__ == '__main__':
