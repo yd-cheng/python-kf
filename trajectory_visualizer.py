@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from geometry_msgs.msg import Twist, Pose, Point, Quaternion, Vector3
 from nav_msgs.msg import Odometry
 
+
 def initialize():
     if len(sys.argv) < 2:
         print("Enter robot ID to plot")
@@ -51,6 +52,7 @@ def callback(odom):
             print('y:{}'.format(y))
         else:
             print('y: {}'.format(y))
+
 
 
 if __name__ == '__main__':

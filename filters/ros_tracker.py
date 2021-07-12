@@ -25,6 +25,9 @@ class ROSTracker:
         self.publisher = rospy.Publisher('tracked_robot_{}'.format(self.robot_id), Odometry, queue_size=10)
         self.tracked_robot = RobotFilter()
 
+        # Sleep so CPU isn't hammered
+        self.rate = rospy.Rate(2)
+
 
     def start(self):
         # attempt to subscribe to given topic
@@ -60,3 +63,4 @@ class ROSTracker:
         odom.twist.twist = Twist(Vector3(robot_velocity[0], robot_velocity[1], 0), Vector3(0, 0, robot_velocity[2]))
       
         self.publisher.publish(odom)
+        #self.rate.sleep()
