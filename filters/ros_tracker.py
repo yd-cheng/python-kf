@@ -13,17 +13,19 @@ from robot_kalman_filter import RobotFilter
 class ROSTracker:
     STATE_PREDICTION_TIME = TrackerConst.STATE_PREDICTION_TIME
 
-    def __init__(self, name, robot_id):
-        self.robot_id = robot_id
-        self.ros_topic = 'robot_pose_{}'.format(robot_id)
+    def __init__(self, name, robot_ids):
+        self.robot_ids = robot_ids
+        self.ros_topics = [for id in self.robot_ids: 'robot_pose_{}'.format(id)]
 
         rospy.init_node(name)
         rospy.loginfo('Created ros node {}'.format(name))
-        rospy.loginfo('Subscribed to {}'.format(self.ros_topic))
+        
+        for topic in self.ros_topics:
+            rospy.loginfo('Subscribed to {}'.format(topic))
 
         # init dict to store all publishers
-        self.publisher = rospy.Publisher('tracked_robot_{}'.format(self.robot_id), Odometry, queue_size=10)
-        self.tracked_robot = RobotFilter()
+        self.publisher = [for id in self.robot_ids: rospy.Publisher('tracked_robot_{}'.format(id), Odometry, queue_size=10)]
+        self.tracked_robots = [for _ in self.robot_ids: RobotFilter()]
 
         # Sleep so CPU isn't hammered
         self.rate = rospy.Rate(2)

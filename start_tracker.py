@@ -16,6 +16,6 @@ if __name__ == '__main__':
         print(sys.argv[i])
         robot_ids.append(sys.argv[i])
 
-    tracker = ROSTracker('filter_{}'.format(robot_ids[0]), robot_ids[0])
-    tracker.start()
+    tracker = ROSTracker('kalman_tracker', robot_ids)
+    #tracker.start()
 
