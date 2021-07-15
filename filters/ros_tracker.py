@@ -41,6 +41,8 @@ class ROSTracker:
 
     def callback(self, poseStamped):
         time = poseStamped.header.stamp
+        robot_id = poseStamped.header.frame_id
+        print(robot_id)
         pose = poseStamped.pose
         quaternion = (pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w)
         euler = tf.transformations.euler_from_quaternion(quaternion)
