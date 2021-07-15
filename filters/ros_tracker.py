@@ -20,11 +20,11 @@ class ROSTracker:
         rospy.init_node(name)
         rospy.loginfo('Created ros node {}'.format(name))
         
-        for topic in self.ros_topics:
-            rospy.loginfo('Subscribed to {}'.format(topic))
+        for id in self.robot_ids:
+            rospy.loginfo('Publishing to tracked_robot_{}'.format(id))
 
         # init dict to store all publishers
-        self.publisher = [rospy.Publisher('tracked_robot_{}'.format(id), Odometry, queue_size=10) for id in self.robots_ids]
+        self.publishers = [rospy.Publisher('tracked_robot_{}'.format(id), Odometry, queue_size=10) for id in self.robot_ids]
         self.tracked_robots = [RobotFilter() for _ in self.robot_ids]
 
         # Sleep so CPU isn't hammered
@@ -32,13 +32,14 @@ class ROSTracker:
 
 
     def start(self):
-        # attempt to subscribe to given topic
-        rospy.Subscriber(self.ros_topic, PoseStamped, self.callback)
+        # attempt to subscribe to given topics
+        for topic in self.ros_topics:
+            rospy.Subscriber(topic, PoseStamped, self.callback)
+
         try:
             rospy.spin()
         except SystemExit:
             print("Tracker failed. Exiting")
-
 
 
     def callback(self, poseStamped):
@@ -46,25 +47,25 @@ class ROSTracker:
         robot_id = poseStamped.header.frame_id
         print(robot_id)
         pose = poseStamped.pose
+        robot_id = int(poseStamped.header.frame_id)
         quaternion = (pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w)
         euler = tf.transformations.euler_from_quaternion(quaternion)
         obs_state = np.array([pose.position.x, pose.position.y, euler[2]]) # euler[2] is orientation in radians
 
         # Update and predict
-        self.tracked_robot.update(obs_state, time) 
-        self.tracked_robot.predict(TrackerConst.STATE_PREDICTION_TIME)
+        self.tracked_robots[robot_id].update(obs_state, time) 
+        self.tracked_robots[robot_id].predict(TrackerConst.STATE_PREDICTION_TIME)
 
-        #rospy.loginfo('dx: %0.3f, dy: %0.3f', self.tracked_robot.velocity[0], self.tracked_robot.velocity[1])
         odom = Odometry()
         odom.header.stamp = rospy.Time.now()
 
-        robot_pose = self.tracked_robot.pose
-        robot_velocity = self.tracked_robot.velocity
+        robot_pose = self.tracked_robots[robot_id].pose
+        robot_velocity = self.tracked_robots[robot_id].velocity
 
-        quat = tf.transformations.quaternion_from_euler(0, 0, self.tracked_robot.get_orientation)
+        quat = tf.transformations.quaternion_from_euler(0, 0, self.tracked_robots[robot_id].get_orientation)
 
         odom.pose.pose = Pose(Point(robot_pose[0], robot_pose[1], 0), Quaternion(*quat))
         odom.twist.twist = Twist(Vector3(robot_velocity[0], robot_velocity[1], 0), Vector3(0, 0, robot_velocity[2]))
       
-        self.publisher.publish(odom)
+        self.publishers[robot_id].publish(odom)
         #self.rate.sleep()

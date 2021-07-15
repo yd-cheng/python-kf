@@ -13,9 +13,8 @@ if __name__ == '__main__':
     robot_ids = []
 
     for i in range(len(sys.argv))[1:]:
-        print(sys.argv[i])
         robot_ids.append(sys.argv[i])
 
     tracker = ROSTracker('kalman_tracker', robot_ids)
-    #tracker.start()
+    tracker.start()
 
