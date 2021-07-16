@@ -45,7 +45,6 @@ class ROSTracker:
     def callback(self, poseStamped):
         time = poseStamped.header.stamp
         robot_id = poseStamped.header.frame_id
-        print(robot_id)
         pose = poseStamped.pose
         robot_id = int(poseStamped.header.frame_id)
         quaternion = (pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w)
