@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 import sys
 sys.path.insert(1, '/home/rdesc/vision-system/python-kf/filters')
 
