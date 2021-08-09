@@ -1,8 +1,0 @@
-focal length: 713.082067
-principal x: 324
-principal y: 244
-distortion: -0.000013
-q0-q3: 0
-tx: -20
-ty: -20
-tz: 4063
