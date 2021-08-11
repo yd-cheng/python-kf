@@ -67,4 +67,3 @@ class ROSTracker:
         odom.twist.twist = Twist(Vector3(robot_velocity[0], robot_velocity[1], 0), Vector3(0, 0, robot_velocity[2]))
       
         self.publishers[robot_id].publish(odom)
-        #self.rate.sleep()
