@@ -18,7 +18,7 @@ class RobotFilter(KalmanFilter):
     ORIENTATION_OBSERVATION_COVARIANCE = RobotConst.ORIENTATION_OBSERVATION_COVARIANCE
 
     def __init__(self):
-        self.tau = [0.3, 0.3, 0.3]
+        self.tau = [30.0, 30.0, 30.0]
         super(RobotFilter, self).__init__()
 
     @property
@@ -53,6 +53,8 @@ class RobotFilter(KalmanFilter):
                          [0, 0, 1, 0, 0, 0],   # Position y
                          [0, 0, 0, 0, 1, 0]])  # Orientation
 
+    '''
+    # No control inputs used
     def control_input_model(self, dt=0):
         return np.array([[0,                0,                0],  # Position x
                          [dt / self.tau[0], 0,                0],  # Speed x
@@ -60,6 +62,7 @@ class RobotFilter(KalmanFilter):
                          [0,                dt / self.tau[1], 0],  # Speed y
                          [0,                0,                0],  # Position Theta
                          [0,                0,                dt / self.tau[2]]])  # Speed Theta
+    '''
 
     def initial_state_covariance(self):
         return RobotFilter.INITIAL_STATE_COVARIANCE * np.eye(self.state_number)
@@ -83,7 +86,7 @@ class RobotFilter(KalmanFilter):
         #dt = t_capture - self.last_t_capture
         #if dt < 0:
             #return
-        dt = 0
+        dt = 0.0
         self.last_t_capture = t_capture
         self.last_observation = observation
 
@@ -100,8 +103,9 @@ class RobotFilter(KalmanFilter):
         if not self.is_active:
             return
         self.F = self.transition_model(dt)
-        self.B = self.control_input_model(dt)
-        self.x = np.dot(self.F, self.x) + np.dot(self.B, self.u)
+        # No control matrix
+        #self.B = self.control_input_model(dt)
+        self.x = np.dot(self.F, self.x)# + np.dot(self.B, self.u) no control inputs
         self.P = np.dot(np.dot(self.F, self.P), self.F.T) + self.Q
 
     @staticmethod

@@ -18,7 +18,7 @@ class KalmanFilter(object):
         self.state_number = int(np.size(self.F, 0))
         self.observable_state = int(np.size(self.H, 0))
 
-        self.B = self.control_input_model()
+        #self.B = self.control_input_model() # Not used
 
         self.R = self.observation_covariance()
         self.Q = self.process_covariance()
@@ -40,9 +40,11 @@ class KalmanFilter(object):
     def transition_model(self, dt):
         pass
 
+    '''
     @abstractmethod
     def control_input_model(self, dt):
         pass
+    '''
 
     @abstractmethod
     def observation_model(self):
