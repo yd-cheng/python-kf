@@ -27,9 +27,9 @@ def getProcessCov():
                     UKFParams.POSITION_PROCESS_COV,
                     UKFParams.VELOCITY_PROCESS_COV,
                     UKFParams.HEADING_PROCESS_COV,
-                    UKFParams.ANGULAR_VEL_PROCESS_COV])
-                    #UKFParams.VELOCITY_PROCESS_COV,
-                    #UKFParams.VELOCITY_PROCESS_COV])
+                    UKFParams.ANGULAR_VEL_PROCESS_COV,
+                    UKFParams.VELOCITY_PROCESS_COV,
+                    UKFParams.VELOCITY_PROCESS_COV])
 
 def getMeasurementCov():
     return np.diag([UKFParams.POSITION_OBSERVATION_COV,
@@ -45,7 +45,7 @@ def getInitialStateCov():
 def getBodyVelocity():
     global UKFTracker
     state = UKFTracker.x_post
-    return np.array([state[1], state[3], state[5]]).flatten()
+    return np.array([state[6], state[7]]).flatten()
 
 def getGlobalVelocity():
     global UKFTracker
@@ -70,6 +70,8 @@ def state_transition(state, dt):
     y_vel = state[3]
     x_body_vel = x_vel*np.cos(heading) - y_vel*np.sin(heading)
     y_body_vel = x_vel*np.sin(heading) + y_vel*np.cos(heading)
+    print(x_body_vel)
+    print(y_body_vel)
 
     F = np.array([[1.0, dt, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],  # x
                   [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], # x_vel
@@ -115,7 +117,6 @@ def callback(poseStamped):
     orientation = poseStamped.pose.orientation
     rotation = R.from_quat([orientation.x, orientation.y, orientation.z, orientation.w])
     euler = rotation.as_euler('xyz', degrees=False)
-    print(euler)
 
     measurement = np.array([position.x, position.y, euler[2]])
 
@@ -131,7 +132,7 @@ def callback(poseStamped):
     body_vel = getBodyVelocity()
     global_vel = getGlobalVelocity()
 
-    rotation = R.from_euler('xyz', [pose[0], pose[1], pose[2]])
+    rotation = R.from_euler('xyz', [0.0, 0.0, pose[2]], degrees=False)
     quat = rotation.as_quat()
 
     odom.pose.pose = Pose(Point(pose[0], pose[1], 0), Quaternion(*quat))
