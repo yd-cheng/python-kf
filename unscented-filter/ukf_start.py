@@ -68,10 +68,10 @@ def state_transition(state, dt):
 
     x_vel = state[1]
     y_vel = state[3]
-    x_body_vel = x_vel*np.cos(heading) - y_vel*np.sin(heading)
-    y_body_vel = x_vel*np.sin(heading) + y_vel*np.cos(heading)
-    print(x_body_vel)
-    print(y_body_vel)
+    x_factor = np.cos(heading)
+    y_factor = np.sin(heading)
+    #print(abs(x_body_vel))
+    #print(abs(y_body_vel))
 
     F = np.array([[1.0, dt, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],  # x
                   [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], # x_vel
@@ -79,8 +79,8 @@ def state_transition(state, dt):
                   [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0], # y_vel
                   [0.0, 0.0, 0.0, 0.0, 1.0, dt, 0.0, 0.0], # theta
                   [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0], # theta_vel
-                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, x_body_vel, 0.0], # x_body_vel
-                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, y_body_vel]  # y_body_vel
+                  [0.0, x_factor, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], # x_body_vel
+                  [0.0, 0.0, 0.0, y_factor, 0.0, 0.0, 0.0, 0.0]  # y_body_vel
                   ], dtype=float)
 
     return np.dot(F, state)
@@ -92,6 +92,9 @@ def tracker_predict():
 def tracker_update(measurement):
     global UKFTracker
     UKFTracker.update(measurement)
+
+def wrap_to_pi(angle):
+    return (angle + np.pi) % (2 * np.pi) - np.pi
 
 def initialize_tracker():
     sigmas = getMerwePoints()
@@ -117,8 +120,9 @@ def callback(poseStamped):
     orientation = poseStamped.pose.orientation
     rotation = R.from_quat([orientation.x, orientation.y, orientation.z, orientation.w])
     euler = rotation.as_euler('xyz', degrees=False)
+    wrapped_angle = wrap_to_pi(euler[2])
 
-    measurement = np.array([position.x, position.y, euler[2]])
+    measurement = np.array([position.x, position.y, wrapped_angle)
 
     # Update and predict
     tracker_predict()
