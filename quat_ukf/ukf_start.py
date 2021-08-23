@@ -141,13 +141,11 @@ def callback(poseStamped):
     pose = getPose()
     body_vel = getBodyVelocity()
     global_vel = getGlobalVelocity()
-    print(global_vel[2], global_vel[3])
 
     odom.pose.pose.position = Point(pose[0], pose[1], 0)
     odom.pose.pose.orientation = Quaternion(0.0, 0.0, pose[2], pose[3])
 
     angular_vel = euler_from_quat(global_vel[2], global_vel[3])
-    #print(global_vel[0], global_vel[1])
     odom.twist.twist = Twist(Vector3(global_vel[0], global_vel[1], 0), Vector3(0, 0, angular_vel))
     ros_publisher.publish(odom)
 

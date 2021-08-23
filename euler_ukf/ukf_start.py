@@ -10,7 +10,7 @@ import rospy
 from scipy.spatial.transform import Rotation as R
 from geometry_msgs.msg import PoseStamped, Twist, Vector3, Pose, Point, Quaternion
 from nav_msgs.msg import Odometry
-np.set_printoptions(linewidth=np.inf)# suppress=True)
+np.set_printoptions(linewidth=np.inf, suppress=True)
 
 # Global objects
 UKFTracker = None
@@ -69,8 +69,6 @@ def state_transition(state, dt):
     heading = state[4]
     cos_factor = np.cos(heading)
     sin_factor = np.sin(heading)
-
-    print(state)
 
     F = np.array([[1.0, dt, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],  # x
                   [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], # x_vel
