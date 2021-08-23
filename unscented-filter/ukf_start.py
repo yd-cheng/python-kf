@@ -10,7 +10,7 @@ import rospy
 from scipy.spatial.transform import Rotation as R
 from geometry_msgs.msg import PoseStamped, Twist, Vector3, Pose, Point, Quaternion
 from nav_msgs.msg import Odometry
-np.set_printoptions(linewidth=np.inf)
+np.set_printoptions(linewidth=np.inf)# suppress=True)
 
 # Global objects
 UKFTracker = None
@@ -28,8 +28,8 @@ def getProcessCov():
                     UKFParams.VELOCITY_PROCESS_COV,
                     UKFParams.HEADING_PROCESS_COV,
                     UKFParams.ANGULAR_VEL_PROCESS_COV,
-                    UKFParams.VELOCITY_PROCESS_COV,
-                    UKFParams.VELOCITY_PROCESS_COV])
+                    UKFParams.POSITION_PROCESS_COV,
+                    UKFParams.POSITION_PROCESS_COV])
 
 def getMeasurementCov():
     return np.diag([UKFParams.POSITION_OBSERVATION_COV,
@@ -64,14 +64,13 @@ def hfunction(state):
     return np.array([x_pos, y_pos, heading])
 
 def state_transition(state, dt):
+    #long = x_vel*cos(heading) + y_vel*sin(heading)
+    #lat = x_vel*sin(heading) - y_vel*cos(heading)
     heading = state[4]
+    cos_factor = np.cos(heading)
+    sin_factor = np.sin(heading)
 
-    x_vel = state[1]
-    y_vel = state[3]
-    x_factor = np.cos(heading)
-    y_factor = np.sin(heading)
-    #print(abs(x_body_vel))
-    #print(abs(y_body_vel))
+    print(state)
 
     F = np.array([[1.0, dt, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],  # x
                   [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], # x_vel
@@ -79,8 +78,8 @@ def state_transition(state, dt):
                   [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0], # y_vel
                   [0.0, 0.0, 0.0, 0.0, 1.0, dt, 0.0, 0.0], # theta
                   [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0], # theta_vel
-                  [0.0, x_factor, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], # x_body_vel
-                  [0.0, 0.0, 0.0, y_factor, 0.0, 0.0, 0.0, 0.0]  # y_body_vel
+                  [0.0, cos_factor, 0.0, sin_factor, 0.0, 0.0, 0.0, 0.0], # longitudinal
+                  [0.0, sin_factor, 0.0, -1*cos_factor, 0.0, 0.0, 0.0, 0.0]  # lateral
                   ], dtype=float)
 
     return np.dot(F, state)
@@ -122,7 +121,7 @@ def callback(poseStamped):
     euler = rotation.as_euler('xyz', degrees=False)
     wrapped_angle = wrap_to_pi(euler[2])
 
-    measurement = np.array([position.x, position.y, wrapped_angle)
+    measurement = np.array([position.x, position.y, wrapped_angle])
 
     # Update and predict
     tracker_predict()
