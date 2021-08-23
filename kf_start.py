@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 import sys
-sys.path.insert(1, '/home/rdesc/vision-system/python-kf/linear-filter')
+sys.path.insert(1, '/home/rdesc/vision-system/python-kf/linear_kf')
 
 from ros_tracker import ROSTracker
 
