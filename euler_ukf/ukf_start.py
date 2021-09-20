@@ -22,14 +22,19 @@ def getMerwePoints():
     return MerweScaledSigmaPoints(UKFParams.STATE_DIM, UKFParams.ALPHA, UKFParams.BETA, UKFParams.KAPPA)
 
 def getProcessCov():
-    return np.diag([UKFParams.POSITION_PROCESS_COV,
-                    UKFParams.VELOCITY_PROCESS_COV,
-                    UKFParams.POSITION_PROCESS_COV,
-                    UKFParams.VELOCITY_PROCESS_COV,
-                    UKFParams.HEADING_PROCESS_COV,
-                    UKFParams.ANGULAR_VEL_PROCESS_COV,
-                    UKFParams.POSITION_PROCESS_COV,
-                    UKFParams.POSITION_PROCESS_COV])
+    return np.diag([UKFParams.POSITION_PROCESS_COV,    #x
+                    UKFParams.VELOCITY_PROCESS_COV,    #x_vel
+                    UKFParams.ACCEL_PROCESS_COV,       #x_accel
+                    UKFParams.JERK_PROCESS_COV,        #x_jerk
+                    UKFParams.POSITION_PROCESS_COV,    #y
+                    UKFParams.VELOCITY_PROCESS_COV,    #y_vel
+                    UKFParams.ACCEL_PROCESS_COV,       #y_accel
+                    UKFParams.JERK_PROCESS_COV,        #y_jerk
+                    UKFParams.HEADING_PROCESS_COV,     #heading
+                    UKFParams.ANGULAR_VEL_PROCESS_COV, #angular_vel
+                    UKFParams.VELOCITY_PROCESS_COV,    #body_vel
+                    UKFParams.VELOCITY_PROCESS_COV])   #body_vel
+                    
 
 def getMeasurementCov():
     return np.diag([UKFParams.POSITION_OBSERVATION_COV,
@@ -37,7 +42,7 @@ def getMeasurementCov():
                     UKFParams.HEADING_OBSERVATION_COV])
 
 def getInitialState():
-    return np.random.randn(UKFParams.STATE_DIM) 
+    return np.zeros(UKFParams.STATE_DIM) 
 
 def getInitialStateCov():
     return UKFParams.INITIAL_STATE_COV * np.eye(UKFParams.STATE_DIM)
@@ -50,17 +55,17 @@ def getBodyVelocity():
 def getGlobalVelocity():
     global UKFTracker
     state = UKFTracker.x_post
-    return np.array([state[1], state[3], state[5]]).flatten()
+    return np.array([state[1], state[5], state[9]]).flatten()
 
 def getPose():
     global UKFTracker
     state = UKFTracker.x_post
-    return np.array([state[0], state[2], state[4]]).flatten()
+    return np.array([state[0], state[4], state[8]]).flatten()
 
 def hfunction(state):
     x_pos = state[0]
-    y_pos = state[2]
-    heading = state[4]
+    y_pos = state[4]
+    heading = state[8]
     return np.array([x_pos, y_pos, heading])
 
 def state_transition(state, dt):
@@ -70,14 +75,18 @@ def state_transition(state, dt):
     cos_factor = np.cos(heading)
     sin_factor = np.sin(heading)
 
-    F = np.array([[1.0, dt, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],  # x
-                  [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], # x_vel
-                  [0.0, 0.0, 1.0, dt, 0.0, 0.0, 0.0, 0.0], # y
-                  [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0], # y_vel
-                  [0.0, 0.0, 0.0, 0.0, 1.0, dt, 0.0, 0.0], # theta
-                  [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0], # theta_vel
-                  [0.0, cos_factor, 0.0, sin_factor, 0.0, 0.0, 0.0, 0.0], # longitudinal
-                  [0.0, sin_factor, 0.0, -1*cos_factor, 0.0, 0.0, 0.0, 0.0]  # lateral
+    F = np.array([[1.0, dt,  dt**2, dt**3, 0.0, 0.0, 0.0,   0.0,   0.0, 0.0, 0.0, 0.0],  #x
+                  [0.0, 1.0, dt,    dt**2, 0.0, 0.0, 0.0,   0.0,   0.0, 0.0, 0.0, 0.0], # x_vel
+                  [0.0, 0.0, 1.0,   dt,    0.0, 0.0, 0.0,   0.0,   0.0, 0.0, 0.0, 0.0], # x_accel
+                  [0.0, 0.0, 0.0,   1.0,   0.0, 0.0, 0.0,   0.0,   0.0, 0.0, 0.0, 0.0], # x_jerk
+                  [0.0, 0.0, 0.0,   0.0,   1.0, dt,  dt**2, dt**3, 0.0, 0.0, 0.0, 0.0], # y
+                  [0.0, 0.0, 0.0,   0.0,   0.0, 1.0, dt,    dt**2, 0.0, 0.0, 0.0, 0.0], # y_vel
+                  [0.0, 0.0, 0.0,   0.0,   0.0, 0.0, 1.0,   dt,    0.0, 0.0, 0.0, 0.0], # y_accel
+                  [0.0, 0.0, 0.0,   0.0,   0.0, 0.0, 0.0,   1.0,   0.0, 0.0, 0.0, 0.0], # y_jerk
+                  [0.0, 0.0, 0.0,   0.0,   0.0, 0.0, 0.0,   0.0,   1.0, dt,  0.0, 0.0], # heading
+                  [0.0, 0.0, 0.0,   0.0,   0.0, 0.0, 0.0,   0.0,   0.0, 1.0, 0.0, 0.0], # angular_vel
+                  [0.0, 0.0, 0.0,   0.0,   0.0, 0.0, 0.0,   0.0,   0.0, 0.0, 0.0, 0.0], # longitudinal
+                  [0.0, 0.0, 0.0,   0.0,   0.0, 0.0, 0.0,   0.0,   0.0, 0.0, 0.0, 0.0]  # lateral
                   ], dtype=float)
 
     return np.dot(F, state)
@@ -138,6 +147,7 @@ def callback(poseStamped):
 
     odom.pose.pose = Pose(Point(pose[0], pose[1], 0), Quaternion(*quat))
     odom.twist.twist = Twist(Vector3(global_vel[0], global_vel[1], 0), Vector3(0, 0, global_vel[2]))
+    global ros_publisher
     ros_publisher.publish(odom)
 
 def start():
